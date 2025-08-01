@@ -1,27 +1,30 @@
-name: Render PlantUML Diagrams
+name: Generate PlantUML diagrams
 
 on:
   push:
-    branches:
-      - main
-      - master
+    paths:
+      - '**.puml'
+      - '**.plantuml'
 
 jobs:
-  render_diagrams:
-    name: Draw and Commit Diagrams
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Permission is needed to push changes
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Generate PlantUML diagrams
+        uses: 
+          - name: Run PlantUML Action
+            uses: <<!nav>>plantuml/plantuml-action@v1
+            with:
+              args: -outputdir docs/diagrams -serverurl https://www.plantuml.com/plantuml
+              files: "*.puml"
 
-      - name: Render PlantUML diagrams
-        # FIX 1: Using the official and verified PlantUML action
-        uses: plantuml/plantuml-action@v2
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          # FIX 2: Correct arguments to generate PNG from .puml files
-          args: "-tpng diagrams/*.puml"
+          commit_message: "docs: generate PlantUML diagrams"
+          branch: main
+
 
       - name: Commit generated diagrams
         # FIX 3: This step is now correctly indented
