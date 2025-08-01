@@ -1,0 +1,33 @@
+# This is a GitHub Actions workflow that automatically renders PlantUML diagrams
+name: Render PlantUML Diagrams
+
+# This action runs on every push to the main branch
+on:
+  push:
+    branches:
+      - main
+
+# The jobs to carry out
+jobs:
+  render_diagrams:
+    # Use the latest version of Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the student's code so the action can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Find all .plantuml files and render them to SVG images
+      - name: Render PlantUML diagrams to SVG
+        uses: plantuml/plantuml-action@v2
+        with:
+          # Tell the action to search for all files ending in .plantuml
+          args: -t"svg" -o"../.." "**/*.plantuml"
+
+      # 3. Automatically commit the newly generated SVG files back to the repository
+      - name: Commit generated diagrams
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bot: Render PlantUML diagrams"
+          file_pattern: "**/*.svg"
