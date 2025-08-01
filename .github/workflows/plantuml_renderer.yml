@@ -8,24 +8,28 @@ on:
 
 jobs:
   render_diagrams:
+    name: Draw and Commit Diagrams
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permission is needed to push changes
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Check out repository
+        uses: actions/checkout@v3
 
       - name: Render PlantUML diagrams
-        uses: Timmy/plantuml-action@v1
+        # FIX 1: Using the official and verified PlantUML action
+        uses: plantuml/plantuml-action@v2
         with:
-          args: '-tutxt diagrams/*.txt'
-      - name: Display diagrams
-        run: cat diagrams/*.utxt
+          # FIX 2: Correct arguments to generate PNG from .puml files
+          args: "-tpng diagrams/*.puml"
 
       - name: Commit generated diagrams
+        # FIX 3: This step is now correctly indented
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          # FIX 4: Adding the correct file type (.png)
           git add diagrams/*.png
-          # Check if there are any changes to commit
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
