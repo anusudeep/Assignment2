@@ -1,25 +1,55 @@
 name: Render PlantUML Diagrams
 
+# This action runs on pushes to the main or master branches.
 on:
   push:
-    paths:
-      - 'diagrams/**/*.puml'
-      - '.github/workflows/plantuml-render.yml'
-  workflow_dispatch:
+    branches:
+      - main
+      - master
+
+# Concurrency control ensures that only the latest push for a branch will run,
+# cancelling any older, in-progress runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  render-plantuml:
+  render_diagrams:
+    name: Draw and Commit Diagrams
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Render PlantUML diagrams
-        run: |
-          mkdir -p diagrams/png
-          find diagrams -name '*.puml' -exec docker run --rm -v "$PWD/diagrams:/workspace" plantuml/plantuml -tpng -o png "/workspace/{}" \;
+    # Timeout prevents the job from running indefinitely.
+    timeout-minutes: 5
 
-      - name: Commit and push rendered PNGs
-        uses: stefanzweifel/git-auto-commit-action@v5
+    # Explicitly set permissions for the job for security best practices.
+    # 'contents: write' is required for the action to push commits back to the repo.
+    permissions:
+      contents: write
+
+    steps:
+      # Step 1: Check out the repository's code.
+      # Using a stable major version like @v4 is recommended.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Step 2: Render diagrams using the official PlantUML action.
+      # @v2 is the latest stable major release for this action.
+      - name: Render PlantUML diagrams
+        uses: plantuml/plantuml-action@v2
         with:
-          commit_message: "chore: Render PlantUML diagrams skip ci"
-          file_pattern: diagrams/png/*.png
+          # Arguments tell PlantUML to create PNGs for all .puml files in the diagrams folder.
+          args: "-tpng diagrams/*.puml"
+
+      # Step 3: Commit the newly generated PNG files back to the repository.
+      - name: Commit generated diagrams
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add diagrams/*.png
+          
+          # This check prevents empty commits if the diagrams haven't changed.
+          if git diff --staged --quiet; then
+            echo "No changes in diagrams to commit."
+          else
+            git commit -m "Auto-generate PlantUML diagrams"
+            git push
+          fi
