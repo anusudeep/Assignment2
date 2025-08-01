@@ -1,25 +1,26 @@
-name: Render PlantUML Diagrams
+name: Draw and Commit Diagrams
 
 on:
   push:
     paths:
       - 'diagrams/**/*.puml'
-      - '.github/workflows/plantuml_render.yml'
+      - '.github/workflows/plantuml-render.yml'
   workflow_dispatch:
+
 jobs:
   render-plantuml:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Use latest stable version
+        uses: actions/checkout@v3
 
-      - name: Render PlantUML diagrams
-        run: |
-          mkdir -p diagrams/png
-          find diagrams -name '*.puml' -exec docker run --rm -v "$PWD/diagrams:/workspace" plantuml/plantuml -tpng -o png "/workspace/{}" \;
+      - name: Generate PNGs from PlantUML
+        uses: Timmy/plantuml-action@v1
+        with:
+          args: '-tpng diagrams/*.puml'
 
       - name: Commit and push rendered PNGs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: Render PlantUML diagrams [skip ci]"
-          file_pattern: diagrams/png/*.png
+          file_pattern: diagrams/*.png
