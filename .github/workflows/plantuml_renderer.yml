@@ -1,41 +1,29 @@
-name: Generate PlantUML diagrams
+name: Render PlantUML Diagrams
 
 on:
   push:
     paths:
-      - '**.puml'
-      - '**.plantuml'
+      - 'diagrams/**/*.puml'
+      - '.github/workflows/plantuml-render.yml'
+  workflow_dispatch:
 
 jobs:
-  build:
+  render-plantuml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Generate PlantUML diagrams
-        uses: 
-          - name: Run PlantUML Action
-            uses: <<!nav>>plantuml/plantuml-action@v1
-            with:
-              args: -outputdir docs/diagrams -serverurl https://www.plantuml.com/plantuml
-              files: "*.puml"
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "docs: generate PlantUML diagrams"
-          branch: main
+      - name: Set up output directory
+        run: mkdir -p diagrams/png
 
-
-      - name: Commit generated diagrams
-        # FIX 3: This step is now correctly indented
+      - name: Render PlantUML diagrams
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          # FIX 4: Adding the correct file type (.png)
-          git add diagrams/*.png
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "Auto-generate PlantUML diagrams"
-            git push
-          fi
+          docker run --rm -v ${{ github.workspace }}/diagrams:/workspace plantuml/plantuml -tpng -o png *.puml
+
+      - name: Commit and push rendered PNGs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: Render PlantUML diagrams [skip ci]"
+          branch: ${{ github.ref }}
+          file_pattern: diagrams/png/*.png
