@@ -12,18 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up output directory
-        run: mkdir -p diagrams/png
-
+        uses: actions/checkout@v3
       - name: Render PlantUML diagrams
         run: |
-          docker run --rm -v ${{ github.workspace }}/diagrams:/workspace plantuml/plantuml -tpng -o png *.puml
+          mkdir -p diagrams/png
+          find diagrams -name '*.puml' -exec docker run --rm -v "$PWD/diagrams:/workspace" plantuml/plantuml -tpng -o png "/workspace/{}" \;
 
       - name: Commit and push rendered PNGs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: Render PlantUML diagrams [skip ci]"
-          branch: ${{ github.ref }}
+          commit_message: "chore: Render PlantUML diagrams skip ci"
           file_pattern: diagrams/png/*.png
