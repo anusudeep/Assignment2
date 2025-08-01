@@ -11,13 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Render PlantUML diagrams
         uses: Timmy/plantuml-action@v1
         with:
-          path: diagrams
-          output-format: png
+          args: '-tutxt diagrams/*.txt'
+      - name: Display diagrams
+        run: cat diagrams/*.utxt
 
       - name: Commit generated diagrams
         run: |
